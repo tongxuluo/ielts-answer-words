@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 获取所有需要的DOM元素
+    // 获取所有需要的DOM元素 (此部分无变化)
     const controlBtn = document.getElementById('control-btn');
     const endBtn = document.getElementById('end-btn');
     const intervalSelect = document.getElementById('interval-select');
@@ -17,31 +17,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('sidebar');
     const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
 
-    // 状态管理变量
+    // 状态管理变量 (此部分无变化)
     let words = [];
     let currentIndex = 0;
     let isDictating = false;
     let isPaused = false;
     
-    // 计时器相关变量
+    // 计时器相关变量 (此部分无变化)
     let wordTimeout;
     let wordStartTime;
     let timeRemainingOnPause;
     const FEEDBACK_DELAY = 1200;
 
-    // --- 解析单词列表 (无变化) ---
+    // --- 解析单词列表 (逻辑更新) ---
     function parseWordList() {
-        const text = wordListInput.value.trim();
+        const text = wordListInput.value; // 直接获取完整文本
         if (!text) return [];
+        
         return text.split('\n').map(line => {
-            const parts = line.trim().split(/\s+/);
-            if (!parts[0]) return null;
+            const trimmedLine = line.trim();
+
+            // --- ✨ 新增的智能过滤逻辑 ---
+            // 1. 如果行是空的，或不是以英文字母开头，则视为无效行，返回null
+            //    这个规则可以过滤掉 '###', '**', '```' 以及中文标题等。
+            if (!/^[a-zA-Z]/.test(trimmedLine)) {
+                return null;
+            }
+            // --- 过滤逻辑结束 ---
+
+            // 原有的解析逻辑，只对有效行执行
+            const parts = trimmedLine.split(/\s+/);
             const wordParts = [];
             const otherParts = [];
             let foundNonWord = false;
+            
             parts.forEach(p => {
-                if (/[\u4e00-\u9fa5]/.test(p) || !isNaN(p)) foundNonWord = true;
-                if(foundNonWord) otherParts.push(p); else wordParts.push(p);
+                // 判断是否为中文或纯数字
+                if (/[\u4e00-\u9fa5]/.test(p) || /^\d+$/.test(p)) {
+                    foundNonWord = true;
+                }
+                if(foundNonWord) {
+                    otherParts.push(p);
+                } else {
+                    wordParts.push(p);
+                }
             });
             const word = wordParts.join(' ');
             return {
@@ -50,14 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 correctCount: parseInt(otherParts[1]) || 0,
                 totalCount: parseInt(otherParts[2]) || 0
             };
-        }).filter(Boolean);
+        }).filter(Boolean); // 最后使用 filter(Boolean) 统一移除所有返回null的无效行
     }
 
-    // --- 核心听写流程控制 ---
+    // --- 核心听写流程控制 (此部分无变化) ---
     function startDictation() {
         words = parseWordList();
         if (words.length === 0) {
-            alert('请在右侧输入单词列表！');
+            alert('未检测到有效单词！请检查输入格式。');
             return;
         }
         isDictating = true;
@@ -71,26 +90,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isDictating || isPaused) return;
         isPaused = true;
         clearTimeout(wordTimeout);
-        // 计算暂停时，当前单词已经过去了多少时间
         timeRemainingOnPause = Date.now() - wordStartTime;
         updateUIForPause();
-        window.speechSynthesis.cancel(); // 暂停时停止朗读
+        window.speechSynthesis.cancel();
     }
 
     function resumeDictation() {
         if (!isDictating || !isPaused) return;
         isPaused = false;
         updateUIForResume();
-        
-        // 计算剩余时间
         const interval = parseInt(intervalSelect.value);
         const remainingTime = interval - timeRemainingOnPause;
-        
-        // 用剩余时间继续倒计时
         wordTimeout = setTimeout(() => {
             checkAnswer(true);
-        }, remainingTime > 0 ? remainingTime : 0); // 避免负数
-        wordStartTime = Date.now() - timeRemainingOnPause; // 修正开始时间，以便下次暂停计算正确
+        }, remainingTime > 0 ? remainingTime : 0);
+        wordStartTime = Date.now() - timeRemainingOnPause;
     }
 
     function endDictation() {
@@ -104,31 +118,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function nextWord() {
         if (!isDictating || isPaused || currentIndex >= words.length) {
-            if(currentIndex >= words.length) endDictation(); // 所有单词听写完毕
+            if(currentIndex >= words.length) endDictation();
             return;
         }
-
         const currentWord = words[currentIndex];
         progressText.textContent = `进度: ${currentIndex + 1} / ${words.length}`;
         translationDisplay.textContent = currentWord.translation;
         userInput.value = '';
         userInput.focus();
         feedbackText.textContent = '';
-        
         speak(currentWord.word);
-        
         const interval = parseInt(intervalSelect.value);
-        wordStartTime = Date.now(); // 记录当前单词开始的时间点
+        wordStartTime = Date.now();
         wordTimeout = setTimeout(() => checkAnswer(true), interval);
     }
 
     function checkAnswer(isTimeUp = false) {
         if (!isDictating || isPaused) return;
         clearTimeout(wordTimeout);
-
         const userAnswer = userInput.value.trim();
         const correctAnswer = words[currentIndex].word;
-        
         words[currentIndex].totalCount++;
         if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
             feedbackText.textContent = `✅ 正确!`;
@@ -138,12 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
             feedbackText.textContent = `❌ 错误! 正确答案: ${correctAnswer}`;
             feedbackText.className = 'incorrect';
         }
-        
         currentIndex++;
         setTimeout(nextWord, FEEDBACK_DELAY);
     }
 
-    // --- 语音播放 (无变化) ---
+    // --- 语音播放 (此部分无变化) ---
     function speak(text) {
         window.speechSynthesis.cancel(); 
         const utterance = new SpeechSynthesisUtterance(text);
@@ -152,8 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.speechSynthesis.speak(utterance);
     }
     
-    // --- 生成报告 (无变化) ---
-    function generateReport() { /* ... (此函数代码无任何变化) ... */
+    // --- 生成报告 (此部分无变化) ---
+    function generateReport() {
         if (words.length === 0) return;
         let totalCorrect = 0, totalOverall = 0;
         let reportText = '| 单词 | 中文 | 正确次数 | 听写次数 |\n| - | - | :-: | :-: |\n';
@@ -163,13 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
             reportText += `| ${word.word} | ${word.translation} | ${word.correctCount} | ${word.totalCount} |\n`;
         });
         const accuracy = totalOverall > 0 ? ((totalCorrect / totalOverall) * 100).toFixed(1) : 0;
-        summaryText.textContent = `听写完成！总正确率: ${accuracy}% (${totalCorrect}/${totalOverall})`;
+        summaryText.textContent = `听写完成！总正确率: <span class="math-inline">\{accuracy\}% \(</span>{totalCorrect}/${totalOverall})`;
         resultsOutput.textContent = reportText;
         resultsArea.classList.remove('hidden');
         wordListInput.value = words.map(w => `${w.word} ${w.translation} ${w.correctCount} ${w.totalCount}`).join('\n');
     }
 
-    // --- UI更新函数 ---
+    // --- UI更新函数 (此部分无变化) ---
     function updateUIForDictationStart() {
         controlBtn.textContent = '暂停';
         controlBtn.className = 'btn btn-pause';
@@ -198,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeDictationArea.classList.add('hidden');
     }
     
-    // --- 事件绑定 ---
+    // --- 事件绑定 (此部分无变化) ---
     controlBtn.addEventListener('click', () => {
         if (!isDictating) {
             startDictation();
@@ -208,16 +216,13 @@ document.addEventListener('DOMContentLoaded', () => {
             pauseDictation();
         }
     });
-
     endBtn.addEventListener('click', endDictation);
-
     userInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && isDictating && !isPaused) {
             e.preventDefault();
             checkAnswer(false);
         }
     });
-
     toggleSidebarBtn.addEventListener('click', () => {
         sidebar.classList.toggle('hidden');
     });
