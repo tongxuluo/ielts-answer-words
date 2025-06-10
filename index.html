@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>单词听写助手</title>
+    <title>单词听写助手 (v5.1)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,31 +13,15 @@
             <div class="controls">
                 <div class="control-group">
                     <label for="interval-select">反应时间:</label>
-                    <select id="interval-select">
-                        <option value="2000">2秒</option>
-                        <option value="3000">3秒</option>
-                        <option value="4000" selected>4秒</option>
-                        <option value="5000">5秒</option>
-                        <option value="6000">6秒</option>
-                        <option value="8000">8秒</option>
-                        <option value="10000">10秒</option>
-                    </select>
+                    <select id="interval-select"><option value="2000">2秒</option><option value="3000">3秒</option><option value="4000" selected>4秒</option><option value="5000">5秒</option><option value="6000">6秒</option></select>
                 </div>
                 <div class="control-group">
                     <label for="speed-select">播放倍速:</label>
-                    <select id="speed-select">
-                        <option value="0.8">0.8x</option>
-                        <option value="1.0" selected>1.0x</option>
-                        <option value="1.2">1.2x</option>
-                        <option value="1.5">1.5x</option>
-                    </select>
+                    <select id="speed-select"><option value="0.8">0.8x</option><option value="1.0" selected>1.0x</option><option value="1.2">1.2x</option><option value="1.5">1.5x</option></select>
                 </div>
                 <div class="control-group">
                     <label for="accent-select">口音:</label>
-                    <select id="accent-select">
-                        <option value="en-US" selected>美式</option>
-                        <option value="en-GB">英式</option>
-                    </select>
+                    <select id="accent-select"><option value="en-US" selected>美式</option><option value="en-GB">英式</option></select>
                 </div>
             </div>
 
@@ -45,7 +29,6 @@
                 <button id="control-btn" class="btn btn-start">开始听写</button>
                 <button id="end-btn" class="btn btn-end hidden">结束听写</button>
             </div>
-
 
             <div id="active-dictation-area" class="hidden">
                 <p id="progress-text"></p>
@@ -57,19 +40,19 @@
             <div id="results-area" class="hidden">
                 <h2>听写报告</h2>
                 <p id="summary-text"></p>
-                <pre><code id="results-output"></code></pre>
+                <div id="results-table-container"></div>
+                
+                <div id="incorrect-words-area" class="hidden">
+                    <h3>本轮错词 (可复制用于再次练习):</h3>
+                    <textarea id="incorrect-words-output" readonly></textarea>
+                </div>
             </div>
         </div>
 
         <div class="sidebar" id="sidebar">
-            <h3>单词列表</h3>
-            <p class="instructions">
-                在此粘贴你的单词，支持格式:<br>
-                1. `word`<br>
-                2. `word 中文`<br>
-                3. `word 中文 正确次数 听写次数`
-            </p>
-            <textarea id="word-list-input" placeholder="disturbance 打扰 0 1&#10;security system 安全系统&#10;furniture"></textarea>
+             <h3>单词列表</h3>
+             <p class="instructions">在此粘贴你的单词，支持格式:<br>1. `word`<br>2. `word 中文`<br>3. `word 中文 正确次数 听写次数`</p>
+             <textarea id="word-list-input" placeholder="disturbance 打扰 0 1&#10;security system 安全系统&#10;furniture"></textarea>
         </div>
         <button id="toggle-sidebar-btn" title="隐藏/显示单词列表">›</button>
     </div>
